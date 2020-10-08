@@ -49,15 +49,9 @@ export default {
       diffY: 0,
       sortTimer: null,
       sort: false,
-      endX: 0,
-      endY: 0,
       swipe: false,
       scroll: false
     }
-  },
-  mounted() {
-
-
   },
   methods: {
     getCoord(e, c) {
@@ -84,10 +78,10 @@ export default {
     },
     touchMove(ev) {
       if (this.action) {
-        this.endX = this.getCoord(ev, 'X');
-        this.endY = this.getCoord(ev, 'Y');
-        this.diffX = this.endX - this.startX;
-        this.diffY = this.endY - this.startY;
+        let endX = this.getCoord(ev, 'X');
+        let endY = this.getCoord(ev, 'Y');
+        this.diffX = endX - this.startX;
+        this.diffY = endY - this.startY;
 
         if (!this.sort && !this.swipe && !this.scroll) {
           if (Math.abs(this.diffY) > 10) { // It's a scroll
