@@ -10,15 +10,14 @@
       <div
         ref="sliderNew"
         class="slider-new"
-        @touchstart="touchStart"
-        @touchmove="touchMove"
-        @touchend="touchEnd"
+        @touchstart="touchStart($event)"
+        @touchmove="touchMove($event)"
+        @touchend="touchEnd($event)"
       >
-        <div v-for="(slide, i) in countSlider" :key="i">
-          <div class="bg" :class="`bg-${i}`"></div>
+        <div class="bg bg-0">
+          {{ text }}
         </div>
       </div>
-      <div class="slider-count">{{ activeSlide }} / {{ countSlider }}</div>
     </div>
 
 
@@ -34,9 +33,6 @@
 </template>
 
 <script>
-import { Swiper, SwiperSlide } from 'vue-awesome-swiper'
-import 'swiper/swiper-bundle.css'
-
 export default {
   name: 'HelloWorld',
   props: {
@@ -44,67 +40,83 @@ export default {
   },
   data() {
     return {
-      text: '',
-      activeSlide: 1,
-      countSlider: 4,
-      sliderWidth: 0
+      text: 'slider',
+      touch: false,
+      action: false,
+      startX: 0,
+      startY: 0,
+      diffX: 0,
+      diffY: 0,
+      sortTimer: null,
+      sort: false,
+      endX: 0,
+      endY: 0,
+      swipe: false,
+      scroll: false
     }
   },
   mounted() {
-     this.sliderWidth = this.$refs.sliderNew.scrollWidth / this.countSlider
-    document.querySelector('.slider-new').addEventListener('scroll', () => {
-      console.log(this.$refs.sliderNew.scrollLeft)
-      if(this.$refs.sliderNew.scrollLeft > 0) {
-        this.$refs.sliderNew.scrollLeft = (0 + this.sliderWidth) * this.activeSlide;
-      }
-    })
-  },
-  components: {
-    Swiper,
-    SwiperSlide
+
+
   },
   methods: {
-    touchStart() {
-      //console.log('touchStart')
+    getCoord(e, c) {
+      return /touch/.test(e.type) ? (e.originalEvent || e).changedTouches[0]['page' + c] : e['page' + c];
     },
-    touchMove() {
-      //console.log('touchMove')
-    },
-    touchEnd(event) {
-      //console.log('touchEnd')
-      this.activeSlide = Math.round(this.$refs.sliderNew.scrollLeft / this.sliderWidth) + 1
-
-
-
-      let posTouchX = event.changedTouches[0].clientX - this.$refs.sliderNew.getBoundingClientRect().left
-      let procX = Math.round(posTouchX / this.sliderWidth * 100)
-
-
-      if (procX > 50) {
-        //console.log('right')
-      } else {
-        //console.log('left')
+    testTouch(e) {
+      if (e.type == 'touchstart') {
+        this.touch = true;
+      } else if (this.touch) {
+        this.touch = false;
+        return false;
       }
+      return true;
+    },
+    touchStart(ev) {
+      if (this.testTouch(ev) && !this.action) {
+        this.action = true;
 
-      // this.$refs.sliderNew.scrollLeft = this.sliderWidth * (this.activeSlide-1)
-      // console.log(this.$refs.sliderNew.scrollLeft)
+        this.startX = this.getCoord(ev, 'X');
+        this.startY = this.getCoord(ev, 'Y');
+        this.diffX = 0;
+        this.diffY = 0;
+      }
+    },
+    touchMove(ev) {
+      if (this.action) {
+        this.endX = this.getCoord(ev, 'X');
+        this.endY = this.getCoord(ev, 'Y');
+        this.diffX = this.endX - this.startX;
+        this.diffY = this.endY - this.startY;
 
+        if (!this.sort && !this.swipe && !this.scroll) {
+          if (Math.abs(this.diffY) > 10) { // It's a scroll
+            this.scroll = true;
+          } else if (Math.abs(this.diffX) > 7) { // It's a swipe
+            this.swipe = true;
+          }
+        }
 
+        if (this.swipe) {
+          document.querySelector('body').classList.add('scroll-disabled')
+          this.text = Math.random()
+        }
+      }
+    },
+    touchEnd() {
+      if (this.action) {
+        this.action = false;
 
-      // this.$refs.sliderNew.scrollBy({
-      //   top: 0,
-      //   left: 280,
-      //   behavior: 'smooth'
-      // })
+        if (this.swipe) {
+          console.log('end')
+        }
 
+        this.swipe = false;
+        this.sort = false;
+        this.scroll = false;
 
-
-
-
-
-
-
-
+        document.querySelector('body').classList.remove('scroll-disabled')
+      }
     }
   }
 }
@@ -117,6 +129,11 @@ export default {
     color: #cc0000;
   }
 }
+
+
+
+
+
 
 
 
@@ -172,7 +189,12 @@ export default {
 
 
   .bg {
-    height: 200px;
+    height: 200px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
     &.bg-0 {
       background: #f7d3d3;
     }

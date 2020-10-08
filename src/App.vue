@@ -5,6 +5,17 @@
 </template>
 
 <style lang="scss">
+
+
+
+body {
+  &.scroll-disabled {
+    overflow: hidden;
+  }
+}
+
+
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
