@@ -72,18 +72,6 @@ export default {
   },
   data() {
     return {
-      text: 'slider',
-      touch: false,
-      action: false,
-      startX: 0,
-      startY: 0,
-      diffX: 0,
-      diffY: 0,
-      sortTimer: null,
-      sort: false,
-      swipe: false,
-      scroll: false,
-
       text: '123',
 
       transition: true,
@@ -236,69 +224,6 @@ export default {
       this.transition = false;
       this.swipeEnd();
       this.allowSwipe = true;
-    },
-
-
-
-
-
-    getCoord(e, c) {
-      return /touch/.test(e.type) ? (e.originalEvent || e).changedTouches[0]['page' + c] : e['page' + c];
-    },
-    testTouch(e) {
-      if (e.type == 'touchstart') {
-        this.touch = true;
-      } else if (this.touch) {
-        this.touch = false;
-        return false;
-      }
-      return true;
-    },
-    touchStart(ev) {
-      if (this.testTouch(ev) && !this.action) {
-        this.action = true;
-
-        this.startX = this.getCoord(ev, 'X');
-        this.startY = this.getCoord(ev, 'Y');
-        this.diffX = 0;
-        this.diffY = 0;
-      }
-    },
-    touchMove(ev) {
-      if (this.action) {
-        let endX = this.getCoord(ev, 'X');
-        let endY = this.getCoord(ev, 'Y');
-        this.diffX = endX - this.startX;
-        this.diffY = endY - this.startY;
-
-        if (!this.sort && !this.swipe && !this.scroll) {
-          if (Math.abs(this.diffY) > 10) { // It's a scroll
-            this.scroll = true;
-          } else if (Math.abs(this.diffX) > 7) { // It's a swipe
-            this.swipe = true;
-          }
-        }
-
-        if (this.swipe) {
-          document.querySelector('body').classList.add('scroll-disabled')
-          this.text = Math.random()
-        }
-      }
-    },
-    touchEnd() {
-      if (this.action) {
-        this.action = false;
-
-        if (this.swipe) {
-          console.log('end')
-        }
-
-        this.swipe = false;
-        this.sort = false;
-        this.scroll = false;
-
-        document.querySelector('body').classList.remove('scroll-disabled')
-      }
     },
   }
 }
