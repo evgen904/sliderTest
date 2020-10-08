@@ -1,43 +1,33 @@
 <template>
-  <div class="hello">
-    <h1>Slider</h1>
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
-
-
+  <div
+    class="sc-sliderlight"
+    :class="{ 'mobile': isMobile, 'shadow': isShadow }"
+    @touchstart="swipeStart"
+    @touchmove="swipeAction"
+    @touchend="swipeEnd"
+  >
     <div
-      class="slider"
-      @touchstart="swipeStart"
-      @touchmove="swipeAction"
-      @touchend="swipeEnd"
+      ref="slider"
+      class="sc-sliderlight__track track"
     >
-      <div class="slider-list">
-        <div
-          ref="slider"
-          class="slider-track"
-        >
-          <div v-for="(item, index) in media" class="slide bg" :class="`bg-${index}`" :key="index">
-            {{ item }}
-          </div>
-        </div>
-      </div>
-      <div class="slider-arrows">
-        <button type="button" class="prev" :disabled="slideIndex === 0" @click="prevSlide">&larr;</button>
-        <button type="button" class="next" :disabled="slideIndex === media.length-1" @click="nextSlide">&rarr;</button>
+      <div v-for="(item, index) in media" class="track__item bg" :class="`bg-${index}`" :key="index">
+        {{ item }}
       </div>
     </div>
-
-    <div>{{ text }}</div>
-
-
-
-
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
-    <br><br><br><br><br><br>
+    <div class="sc-sliderlight__arrows arrows" v-if="arrows">
+      <button
+        type="button"
+        class="arrows__prev"
+        :disabled="slideIndex === 0"
+        @click.stop.prevent="prevSlide()"
+      ></button>
+      <button
+        type="button"
+        class="arrows__next"
+        :disabled="slideIndex === media.length-1"
+        @click.stop.prevent="nextSlide()"
+      ></button>
+    </div>
   </div>
 </template>
 
@@ -231,27 +221,198 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.slider {
+.sc-sliderlight {
   position: relative;
   width: 100%;
-  margin: 50px auto 0;
+  height: 100%;
+  background: #fff;
   user-select: none;
   touch-action: pan-y;
-  .slider-list {
-    width: 100%;
-    overflow: hidden;
-    .slider-track {
-      display: flex;
-      .slide {
+  overflow: hidden;
+  &.shadow {
+    &:before {
+      content: "";
+      display: block;
+
+      pointer-events: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+
+      opacity: 0.35;
+      z-index: 1;
+
+      background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.0001) 75%,
+        #000000 100%
+      );
+    }
+  }
+  &:hover {
+    .sc-sliderlight__arrows {
+      opacity: 1;
+    }
+    .arrows {
+      &__prev,
+      &__next {
+        background: rgba(255, 255, 255, 0.8);
+        &:hover:not(.deactive) {
+          background: rgba(255, 255, 255, 1);
+        }
+      }
+    }
+  }
+
+  &__track {
+    display: flex;
+    flex-wrap: nowrap;
+    height: 100%;
+    //transition: transform 0.5s;
+
+    .track {
+      &__item {
         min-width: 100%;
-        height: 200px;
+        height: 100%;
         flex-grow: 1;
-        flex-shrink: 0;
+      }
+      &__img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+        pointer-events: unset;
+      }
+    }
+  }
+
+  &__dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, 0);
+
+    &.dots {
+      width: 50px;
+      overflow: hidden;
+
+      .dots {
+        &__wrap {
+          display: flex;
+          // justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          transition: transform 0.3s;
+
+          &.compact {
+            justify-content: center;
+          }
+        }
+      }
+
+      .dot {
+        width: 10px;
+        min-width: 10px;
+        height: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        img {
-          poiner-events: none;
+
+        &__circle {
+          width: 6px;
+          height: 6px;
+          background: #fff;
+          opacity: 0.7;
+          border-radius: 50%;
+          // transition: width 0.3s, height 0.3s, opacity 0.3s;
+          transition: transform 0.3s, opacity 0.3s;
+        }
+
+        &.active {
+          .dot__circle {
+            width: 6px;
+            height: 6px;
+          }
+        }
+        &.current {
+          .dot__circle {
+            opacity: 0.9;
+          }
+        }
+      }
+    }
+  }
+
+  &__counter {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    z-index: 2;
+    transform: translate(-50%, 0);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    min-width: 40px;
+    height: 20px;
+    padding: 2px 10px;
+
+    .counter {
+      &__text {
+        font-size: 13px;
+        line-height: 17px;
+        color: #fff;
+      }
+    }
+  }
+
+  &__arrows {
+    opacity: 0;
+    transition: opacity 0.3s;
+    .arrows {
+      &__prev {
+        left: 10px;
+        &:before {
+          transform: rotate(180deg);
+        }
+      }
+      &__next {
+        right: 10px;
+      }
+      &__prev,
+      &__next {
+        cursor: pointer;
+
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        transition: background 0.3s, opacity 0.3s;
+
+        &:before {
+          content: "";
+          display: block;
+          background: url("../assets/arrow.svg") center center no-repeat;
+          background-size: contain;
+          width: 8px;
+          height: 10px;
+        }
+
+        &_deactive {
+          opacity: 0.5;
         }
       }
     }
@@ -261,7 +422,6 @@ export default {
 
 
 .bg {
-  height: 200px !important;
   display: flex;
   align-items: center;
   justify-content: center;
