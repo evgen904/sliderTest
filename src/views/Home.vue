@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <HelloWorld :media="['1 slide', '2 slide', '3 slide', '4 slide', '5 slide', '6 slide']"/>
   </div>
 </template>
 
