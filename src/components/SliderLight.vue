@@ -247,7 +247,6 @@ export default {
       }
 
       if (this.isSwipe) {
-        this.pushImage()
         event.preventDefault()
         if (this.slideIndex === 0) {
           if (this.posInit < this.posX1) {
@@ -289,6 +288,7 @@ export default {
           } else if (this.posInit > this.posX1) {
             this.slideIndex++;
           }
+          this.pushImage()
         }
 
         if (this.posInit !== this.posX1) {
