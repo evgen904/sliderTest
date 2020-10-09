@@ -11,7 +11,7 @@
       ref="slider"
       class="sc-sliderlight__track track"
     >
-      <div v-for="(slide, index) in mediaView" class="track__item" :key="index">
+      <div class="track__item" v-for="(slide, i) in mediaView" :key="i">
         <img class="track__img" :src="slide" loading="lazy" alt="" @load="onLoad" @error="onError" />
         <div class="loading"></div>
       </div>
@@ -379,6 +379,70 @@ export default {
         min-width: 100%;
         height: 100%;
         flex-grow: 1;
+        position: relative;
+        .loading {
+          position: absolute;
+          top: 50%;
+          left: 60%;
+          margin: 0 0 0 -32px;
+          &:before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ededef;
+            z-index: 1;
+          }
+          &:after {
+            width: 25px;
+            height: 25px;
+            border: 3px solid #d8d8d8;
+            border-top-color: #f51449;
+          }
+          &:after {
+            content: "";
+            border-radius: 50%;
+            -webkit-animation: spin 1s infinite linear;
+            animation: spin 1s infinite linear;
+            position: absolute;
+            left: 50%;
+            margin-left: -12.5px;
+            top: 50%;
+            margin-top: -12.5px;
+            z-index: 2;
+          }
+
+          &_simple {
+            &:before {
+              background-color: transparent;
+            }
+          }
+
+          &__block {
+            &:before {
+              background: rgba(0, 0, 0, 0.5);
+              opacity: 1;
+            }
+          }
+
+          @keyframes spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          &_primary {
+            &:before {
+              background: #fff;
+            }
+          }
+        }
       }
       &__img {
         object-fit: cover;
