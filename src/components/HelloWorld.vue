@@ -5,15 +5,18 @@
     @touchstart="swipeStart"
     @touchmove="swipeAction"
     @touchend="swipeEnd"
+    @mousedown="swipeStart"
   >
     <div
       ref="slider"
       class="sc-sliderlight__track track"
     >
-      <div v-for="(item, index) in media" class="track__item bg" :class="`bg-${index}`" :key="index">
-        {{ item }}
+      <div v-for="(slide, index) in mediaView" class="track__item" :key="index">
+        <img class="track__img" :src="slide" loading="lazy" alt="" @load="onLoad" @error="onError" />
+        <div class="loading"></div>
       </div>
     </div>
+
     <div class="sc-sliderlight__arrows arrows" v-if="arrows">
       <button
         type="button"
@@ -28,10 +31,38 @@
         @click.stop.prevent="nextSlide()"
       ></button>
     </div>
+
+    <div class="sc-sliderlight__counter counter" v-if="isCounter">
+      <div class="counter__text">
+        <span>{{ slideIndex + 1 }}/{{ media.length }}</span>
+      </div>
+    </div>
+
+    <div class="sc-sliderlight__dots dots" v-if="dots">
+      <div
+        class="dots__wrap"
+        :class="{ compact: media.length < 5 }"
+        :style="{ transform: transformDots }"
+      >
+        <div
+          class="dot"
+          :class="{current: slideIndex == i }"
+          v-for="(dot, i) in media.length"
+          :key="i"
+        >
+          <div class="dot__circle" :style="{ transform: `scale(${sizeDots[i]})` }"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
+// логика работы слайдера
+// https://habr.com/ru/post/501258/
+
+import noPhoto from '../assets/no_photo-fill.svg';
+
 export default {
   name: 'SliderLight',
   props: {
@@ -62,12 +93,15 @@ export default {
   },
   data() {
     return {
-      text: '123',
-
       transition: true,
+      allowSwipe: true,
+      isSwipe: false,
+      isScroll: false,
+      sizeDots: [],
+      mediaView: [],
+      countLoadMedia: 3,
       slideIndex: 0,
       slideWidth: 0,
-      allowSwipe: true,
       nextTrf: 0,
       prevTrf: 0,
       posInit: 0,
@@ -76,13 +110,26 @@ export default {
       posY1: 0,
       posY2: 0,
       posFinal: 0,
-      isSwipe: false,
-      isScroll: false,
     }
   },
   mounted() {
+    for(let i = 0; i < this.countLoadMedia; i++) {
+      if(this.media[i])
+        this.mediaView.push(this.media[i])
+    }
     this.$refs.slider.style.transform = 'translate3d(0px, 0px, 0px)';
     this.slideWidth = this.$refs.slider.clientWidth;
+    this.sizeDots = this.scales(Object.keys(this.media), this.slideIndex);
+  },
+  watch: {
+    slideIndex(val) {
+      this.sizeDots = this.scales(Object.keys(this.media), val);
+
+      this.$emit("currentSlide", val);
+      if (val == this.media.length - 1) {
+        this.$emit("lastSlide", val);
+      }
+    }
   },
   computed: {
     lastTrf() {
@@ -90,16 +137,65 @@ export default {
     },
     posThreshold() {
       return this.slideWidth * 0.1
-    }
+    },
+    transformDots() {
+      let translate;
+      if (this.media.length <= 5) {
+        translate = 0;
+      } else {
+        if (this.slideIndex <= 2) {
+          translate = this.slideIndex ? `0px` : 0;
+        } else if (this.slideIndex >= this.media.length - 3) {
+          translate = this.slideIndex
+            ? `${-1 * (this.media.length - 5)}0px`
+            : 0;
+        } else if (this.slideIndex > 2) {
+          translate = this.slideIndex
+            ? `${-1 * (this.slideIndex - 2)}0px`
+            : 0;
+        }
+      }
+      return `translate(${translate}, 0)`;
+    },
   },
   methods: {
+    onError(e) {
+      e.target.classList.add('no-photo')
+      e.target.src = noPhoto
+    },
+    onLoad(e) {
+      const parent = e.currentTarget.parentElement;
+      const loading = parent.querySelector('.loading')
+      parent.removeChild(loading)
+    },
+    scales(indexArray, currentIndex) {
+      const scaleArray = indexArray.map(v =>
+        Math.abs(v - currentIndex) > 5
+          ? 0
+          : 0.4 + (Math.abs(Math.abs(v - currentIndex) - 5) / 5) * 0.6
+      );
+      return scaleArray;
+    },
+    pushImage() {
+      const indexLoadImage = this.mediaView.length;
+
+      if(!this.mediaView[indexLoadImage] && this.media.length !== this.mediaView.length) {
+        this.mediaView.push(this.media[indexLoadImage])
+      }
+    },
     prevSlide() {
-      this.slideIndex--
-      this.slide()
+      if (this.slideIndex > 0) {
+        this.pushImage()
+        this.slideIndex--
+        this.slide()
+      }
     },
     nextSlide() {
-      this.slideIndex++
-      this.slide()
+      if (this.slideIndex < this.media.length - 1) {
+        this.pushImage()
+        this.slideIndex++
+        this.slide()
+      }
     },
     getEvent() {
       return (event.type.search('touch') !== -1) ? event.touches[0] : event;
@@ -124,6 +220,10 @@ export default {
 
         this.$refs.slider.style.transition = '';
       }
+
+      document.addEventListener('mousemove', this.swipeAction);
+      document.addEventListener('mouseup', this.swipeEnd);
+
     },
     swipeAction() {
       let evt = this.getEvent(),
@@ -147,8 +247,8 @@ export default {
       }
 
       if (this.isSwipe) {
+        this.pushImage()
         event.preventDefault()
-        this.text = Math.random()
         if (this.slideIndex === 0) {
           if (this.posInit < this.posX1) {
             this.setTransform(transform, 0);
@@ -201,6 +301,9 @@ export default {
       } else {
         this.allowSwipe = true;
       }
+
+      document.removeEventListener('mousemove', this.swipeAction);
+      document.removeEventListener('mouseup', this.swipeEnd);
     },
     setTransform(transform, comapreTransform) {
       if (transform >= comapreTransform) {
@@ -219,7 +322,6 @@ export default {
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .sc-sliderlight {
   position: relative;
@@ -282,7 +384,7 @@ export default {
         object-fit: cover;
         width: 100%;
         height: 100%;
-        pointer-events: unset;
+        pointer-events: none;
       }
     }
   }
@@ -386,6 +488,8 @@ export default {
       }
       &__prev,
       &__next {
+        outline-style: none;
+        border: none;
         cursor: pointer;
 
         position: absolute;
@@ -411,39 +515,11 @@ export default {
           height: 10px;
         }
 
-        &_deactive {
+        &:disabled {
           opacity: 0.5;
         }
       }
     }
-  }
-}
-
-
-
-.bg {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: bold;
-  &.bg-0 {
-    background: #f7d3d3;
-  }
-  &.bg-1 {
-    background: #d3f7e3;
-  }
-  &.bg-2 {
-    background: #eed3f7;
-  }
-  &.bg-3 {
-    background: #d3ebf7;
-  }
-  &.bg-4 {
-    background: #f3d3f7;
-  }
-  &.bg-5 {
-    background: #d3def7;
   }
 }
 </style>
