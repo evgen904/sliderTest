@@ -1,8 +1,10 @@
 <template>
-  <div class="home" style="width: 334px; height: 250px;">
-    <SliderLight :dots="true" :arrows="true" :media="media"/>
+  <div class="home" style="width: 240px; height: 250px;">
+    <!--<SliderLight :dots="true" :arrows="true" :media="media"/>-->
     <br>
-    <SliderNav :media="media2" />
+    <div class="wrap-slider">
+      <SliderNav :media="media2" />
+    </div>
 
 
     <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
@@ -64,3 +66,6 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+</style>

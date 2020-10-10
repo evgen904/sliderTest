@@ -1,5 +1,10 @@
 <template>
-  <div class="slider">
+  <div
+    class="slider"
+    @touchstart="swipeStart"
+    @touchmove="swipeAction"
+    @touchend="swipeEnd"
+  >
     <div ref="nav" class="slider-nav" :style="{ width: width }">
       <div v-if="slideWidth" ref="content" class="nav-content">
         <div
@@ -35,20 +40,70 @@ export default {
     },
   },
   mounted() {
-    this.slideWidth = this.$refs.nav.offsetWidth / 4
+    this.slideWidth = this.$refs.nav.offsetWidth / 3
   },
   data() {
     return {
       current: 0,
       slideWidth: null,
+      startX: 0,
+      posX: 0,
+      posXElement: 0,
     }
   },
+  computed: {
+    sliderWidth() {
+      return this.$refs.content ? this.$refs.content.clientWidth : 0
+    },
+  },
   methods: {
+    getEvent() {
+      return (event.type.search('touch') !== -1) ? event.touches[0] : event;
+    },
+    swipeStart(e) {
+      this.startX = e.changedTouches[0].clientX;
+      this.posXElement = this.$refs.content.getBoundingClientRect().left
+
+
+    },
+    swipeAction(e) {
+
+
+
+      this.posX = e.changedTouches[0].clientX - this.startX
+
+
+
+      let translateNav = this.posXElement + this.posX
+      let maxPosX = this.sliderWidth - this.$refs.nav.clientWidth
+
+
+
+      if (translateNav < 0 && Math.abs(translateNav) < maxPosX) {
+        this.$refs.content.style = `transform: translate(${translateNav}px, 0);`;
+      }
+
+
+
+
+
+
+      //console.log(this.translateNav);
+      //console.log(this.sliderWidth);
+
+
+    },
+    swipeEnd() {
+
+
+
+
+    },
     clickSlide(i) {
       this.current = i
       let translate;
       translate = -this.slideWidth * i;
-      this.$refs.content.style = `transform: translate(${translate}px, 0);`;
+      this.$refs.content.style = `transform: translate(${translate}px, 0); transition: 700ms;`;
     },
   }
 }
@@ -73,7 +128,6 @@ export default {
       position: absolute;
       display: flex;
       height: 100%;
-      transition: 700ms;
       .preview {
         box-sizing: border-box;
         cursor: pointer;
